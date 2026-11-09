@@ -3,53 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Thermos Lid Dashboard</title>
+    <title>Smart Thermos & Pill Box Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #f4f4f9; padding: 20px; margin: 0; }
-        .card { background: white; padding: 20px; margin: 20px auto; max-width: 400px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
-        button { background: #007bff; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; margin-top: 5px; transition: 0.2s; }
-        button:hover { background: #0056b3; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        #status { margin-top: 10px; font-weight: bold; color: #555; }
-        .data-box { font-size: 18px; margin: 10px 0; color: #333; }
-        .input-group { margin: 10px 0; font-size: 16px; }
-        input[type="time"] { padding: 6px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin: 0 0 6px 0;
+        }
+
+        header p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease;
+        }
+
+        .card h3 {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-main);
+            margin-top: 0;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-family: 'Prompt', sans-serif;
+            font-weight: 500;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            background-color: #cbd5e1;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        #status {
+            margin-top: 12px;
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .data-box {
+            background: #f1f5f9;
+            padding: 14px 16px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+        }
+
+        .data-label {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .data-value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        input[type="time"] {
+            padding: 8px 12px;
+            font-size: 15px;
+            font-family: 'Prompt', sans-serif;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: #f8fafc;
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="time"]:focus {
+            border-color: var(--primary);
+        }
     </style>
 </head>
 <body>
 
-    <h1>Smart Thermos & Pill Box</h1>
-    
-    <!-- การเชื่อมต่อ BLE -->
-    <div class="card">
-        <h3>การเชื่อมต่อบลูทูธ (BLE)</h3>
-        <button id="connectBtn">เชื่อมต่อกับ ESP32-C3</button>
-        <p id="status">สถานะ: ยังไม่ได้เชื่อมต่อ</p>
-    </div>
+    <div class="container">
+        <header>
+            <h1>Smart Thermos & Pill Box</h1>
+            <p>ระบบควบคุมและติดตามการทานยาอัจฉริยะ</p>
+        </header>
+        
+        <!-- การเชื่อมต่อ BLE -->
+        <div class="card">
+            <h3>🔗 การเชื่อมต่อบลูทูธ</h3>
+            <button id="connectBtn">เชื่อมต่อกับอุปกรณ์</button>
+            <div id="status">สถานะ: ยังไม่ได้เชื่อมต่อ</div>
+        </div>
 
-    <!-- สถานะแบบ Real-time -->
-    <div class="card">
-        <h3>สถานะอุปกรณ์แบบเรียลไทม์</h3>
-        <div class="data-box">💧 ระดับน้ำ: <span id="waterLevel" style="font-weight: bold; color: #007bff;">-</span> %</div>
-        <div class="data-box">💊 สถานะตลับยา: <span id="pillStatus">รอการเชื่อมต่อ...</span></div>
-    </div>
+        <!-- สถานะแบบ Real-time -->
+        <div class="card">
+            <h3>📊 สถานะอุปกรณ์</h3>
+            <div class="status-grid">
+                <div class="data-box">
+                    <span class="data-label">💧 ระดับน้ำในกระติก</span>
+                    <span class="data-value" id="waterLevel">- %</span>
+                </div>
+                <div class="data-box">
+                    <span class="data-label">💊 สถานะตลับยา</span>
+                    <span class="data-value" id="pillStatus" style="font-size: 13px;">รอการเชื่อมต่อ</span>
+                </div>
+            </div>
+        </div>
 
-    <!-- ตั้งเวลาแจ้งเตือนมื้อยา -->
-    <div class="card">
-        <h3>ตั้งเวลาแจ้งเตือนมื้อยา</h3>
-        <div class="input-group">
-            <label>🌅 มื้อเช้า: </label>
-            <input type="time" id="morningTime" value="08:00">
+        <!-- ตั้งเวลาแจ้งเตือนมื้อยา -->
+        <div class="card">
+            <h3>⏰ ตั้งเวลาแจ้งเตือนมื้อยา</h3>
+            <div class="input-group">
+                <label>🌅 มื้อเช้า</label>
+                <input type="time" id="morningTime" value="08:00">
+            </div>
+            <div class="input-group">
+                <label>☀️ มื้อกลางวัน</label>
+                <input type="time" id="noonTime" value="12:30">
+            </div>
+            <div class="input-group">
+                <label>🌙 มื้อเย็น</label>
+                <input type="time" id="eveningTime" value="19:00">
+            </div>
+            <button id="setAlarmBtn" disabled style="margin-top: 8px;">บันทึกเวลาแจ้งเตือน</button>
         </div>
-        <div class="input-group">
-            <label>☀️ มื้อกลางวัน: </label>
-            <input type="time" id="noonTime" value="12:30">
-        </div>
-        <div class="input-group">
-            <label>🌙 มื้อเย็น: </label>
-            <input type="time" id="eveningTime" value="19:00">
-        </div>
-        <button id="setAlarmBtn" disabled>บันทึกเวลาแจ้งเตือน</button>
     </div>
 
     <script>
@@ -82,16 +240,18 @@
                 await dataCharacteristic.startNotifications();
                 dataCharacteristic.addEventListener('characteristicvaluechanged', handleDataChanged);
 
-                document.getElementById('status').innerText = "เชื่อมต่อสำเร็จ!";
-                document.getElementById('status').style.color = "green";
+                document.getElementById('status').innerText = "✅ เชื่อมต่ออุปกรณ์สำเร็จ";
+                document.getElementById('status').style.color = "var(--success)";
+                document.getElementById('connectBtn').innerText = "เชื่อมต่อแล้ว";
+                document.getElementById('connectBtn').style.backgroundColor = "var(--success)";
                 document.getElementById('setAlarmBtn').disabled = false;
                 
                 syncCurrentTime();
 
             } catch (error) {
                 console.error(error);
-                document.getElementById('status').innerText = "การเชื่อมต่อล้มเหลว: " + error;
-                document.getElementById('status').style.color = "red";
+                document.getElementById('status').innerText = "❌ การเชื่อมต่อล้มเหลว";
+                document.getElementById('status').style.color = "#ef4444";
             }
         });
 
@@ -100,12 +260,12 @@
             const waterPct = value.getUint8(0);
             const slotCode = value.getUint8(1);
 
-            document.getElementById('waterLevel').innerText = waterPct;
+            document.getElementById('waterLevel').innerText = waterPct + " %";
 
-            let slotText = "🟢 ปกติ (ยังไม่ถึงเวลาเตือน)";
-            if (slotCode === 1) slotText = "⏰ กำลังเตือนมื้อเช้า";
-            else if (slotCode === 2) slotText = "⏰ กำลังเตือนมื้อกลางวัน";
-            else if (slotCode === 3) slotText = "⏰ กำลังเตือนมื้อเย็น";
+            let slotText = "🟢 ปกติ";
+            if (slotCode === 1) slotText = "⏰ เตือนมื้อเช้า";
+            else if (slotCode === 2) slotText = "⏰ เตือนมื้อกลางวัน";
+            else if (slotCode === 3) slotText = "⏰ เตือนมื้อเย็น";
 
             document.getElementById('pillStatus').innerText = slotText;
         }
