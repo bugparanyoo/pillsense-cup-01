@@ -58,7 +58,6 @@
             margin-bottom: 16px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
             border: 1px solid var(--border-color);
-            transition: transform 0.2s ease;
         }
 
         .card h3 {
@@ -109,15 +108,62 @@
             text-align: center;
         }
 
-        .status-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
+        /* --- กราฟิกแก้วน้ำ --- */
+        .water-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            background: #f1f5f9;
+            padding: 16px;
+            border-radius: 14px;
         }
 
-        .data-box {
-            background: #f1f5f9;
-            padding: 14px 16px;
+        .water-glass {
+            width: 60px;
+            height: 100px;
+            border: 4px solid var(--primary);
+            border-top: none;
+            border-radius: 0 0 16px 16px;
+            position: relative;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .water-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: linear-gradient(to top, #3b82f6, #60a5fa);
+            height: 0%;
+            transition: height 0.4s ease-in-out;
+        }
+
+        .water-info {
+            text-align: left;
+        }
+
+        .water-info .label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .water-info .value {
+            font-size: 26px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* --- สถานะ 3 ช่องยา --- */
+        .slots-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .slot-row {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 12px 16px;
             border-radius: 12px;
             display: flex;
             justify-content: space-between;
@@ -125,14 +171,33 @@
             font-size: 15px;
         }
 
-        .data-label {
-            color: var(--text-muted);
-            font-weight: 400;
+        .slot-name {
+            font-weight: 500;
+            color: var(--text-main);
         }
 
-        .data-value {
-            font-weight: 600;
-            color: var(--primary);
+        .slot-status {
+            font-size: 13px;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .status-normal {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-alert {
+            background: #fee2e2;
+            color: #991b1b;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
 
         .input-group {
@@ -176,17 +241,35 @@
             <div id="status">สถานะ: ยังไม่ได้เชื่อมต่อ</div>
         </div>
 
-        <!-- สถานะแบบ Real-time -->
+        <!-- กราฟิกแก้วน้ำและระดับน้ำ -->
         <div class="card">
-            <h3>📊 สถานะอุปกรณ์</h3>
-            <div class="status-grid">
-                <div class="data-box">
-                    <span class="data-label">💧 ระดับน้ำในกระติก</span>
-                    <span class="data-value" id="waterLevel">- %</span>
+            <h3>💧 ระดับน้ำในกระติก</h3>
+            <div class="water-section">
+                <div class="water-glass">
+                    <div class="water-fill" id="waterFill"></div>
                 </div>
-                <div class="data-box">
-                    <span class="data-label">💊 สถานะตลับยา</span>
-                    <span class="data-value" id="pillStatus" style="font-size: 13px;">รอการเชื่อมต่อ</span>
+                <div class="water-info">
+                    <div class="label">ปริมาณปัจจุบัน</div>
+                    <div class="value" id="waterLevelText">- %</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- สถานะตลับยา 3 ช่องแยกอิสระ -->
+        <div class="card">
+            <h3>💊 สถานะตลับยาทั้ง 3 มื้อ</h3>
+            <div class="slots-container">
+                <div class="slot-row">
+                    <span class="slot-name">🌅 มื้อเช้า</span>
+                    <span class="slot-status status-normal" id="morningStatus">ปกติ</span>
+                </div>
+                <div class="slot-row">
+                    <span class="slot-name">☀️ มื้อกลางวัน</span>
+                    <span class="slot-status status-normal" id="noonStatus">ปกติ</span>
+                </div>
+                <div class="slot-row">
+                    <span class="slot-name">🌙 มื้อเย็น</span>
+                    <span class="slot-status status-normal" id="eveningStatus">ปกติ</span>
                 </div>
             </div>
         </div>
@@ -258,16 +341,33 @@
         function handleDataChanged(event) {
             const value = event.target.value;
             const waterPct = value.getUint8(0);
-            const slotCode = value.getUint8(1);
+            const slotCode = value.getUint8(1); // 0=ปกติ, 1=เช้า, 2=กลางวัน, 3=เย็น
 
-            document.getElementById('waterLevel').innerText = waterPct + " %";
+            // 1. อัปเดตตัวเลขเปอร์เซ็นต์และระดับน้ำในกราฟิกแก้วน้ำ
+            document.getElementById('waterLevelText').innerText = waterPct + " %";
+            document.getElementById('waterFill').style.height = waterPct + "%";
 
-            let slotText = "🟢 ปกติ";
-            if (slotCode === 1) slotText = "⏰ เตือนมื้อเช้า";
-            else if (slotCode === 2) slotText = "⏰ เตือนมื้อกลางวัน";
-            else if (slotCode === 3) slotText = "⏰ เตือนมื้อเย็น";
+            // 2. อัปเดตสถานะแยกตาม 3 ช่องยา
+            const morningEl = document.getElementById('morningStatus');
+            const noonEl = document.getElementById('noonStatus');
+            const eveningEl = document.getElementById('eveningStatus');
 
-            document.getElementById('pillStatus').innerText = slotText;
+            // รีเซ็ตเป็นสถานะปกติทั้งหมดก่อน
+            morningEl.innerText = "ปกติ"; morningEl.className = "slot-status status-normal";
+            noonEl.innerText = "ปกติ"; noonEl.className = "slot-status status-normal";
+            eveningEl.innerText = "ปกติ"; eveningEl.className = "slot-status status-normal";
+
+            // เปลี่ยนสถานะเฉพาะช่องที่กำลังแจ้งเตือน
+            if (slotCode === 1) {
+                morningEl.innerText = "กำลังเตือน ⏰";
+                morningEl.className = "slot-status status-alert";
+            } else if (slotCode === 2) {
+                noonEl.innerText = "กำลังเตือน ⏰";
+                noonEl.className = "slot-status status-alert";
+            } else if (slotCode === 3) {
+                eveningEl.innerText = "กำลังเตือน ⏰";
+                eveningEl.className = "slot-status status-alert";
+            }
         }
 
         async function syncCurrentTime() {
@@ -307,6 +407,10 @@
                 alert("ตั้งเวลาไม่สำเร็จ: " + error);
             }
         });
+    </script>
+
+</body>
+</html>
     </script>
 
 </body>
