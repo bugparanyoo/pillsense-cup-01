@@ -10,6 +10,7 @@
         button { background: #007bff; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; }
         button:hover { background: #0056b3; }
         #status { margin-top: 10px; font-weight: bold; color: #555; }
+        .data-box { font-size: 18px; margin: 10px 0; color: #333; }
     </style>
 </head>
 <body>
@@ -23,6 +24,12 @@
     </div>
 
     <div class="card">
+        <h3>สถานะอุปกรณ์แบบเรียลไทม์</h3>
+        <div class="data-box">💧 ระดับน้ำ: <span id="waterLevel">-</span> %</div>
+        <div class="data-box">💊 สถานะตลับยา: <span id="pillStatus">รอการแจ้งเตือน...</span></div>
+    </div>
+
+    <div class="card">
         <h3>ซิงค์เวลาปัจจุบัน</h3>
         <button id="syncTimeBtn" disabled>ซิงค์เวลาเข้าบอร์ด</button>
     </div>
@@ -30,6 +37,7 @@
     <script>
         const SERVICE_UUID = "42a70001-e29f-412f-a2e6-7b5c87c0e001";
         const TIME_SYNC_CHAR_UUID = "42a70002-e29f-412f-a2e6-7b5c87c0e001";
+        const DATA_NOTIFY_CHAR_UUID = "42a70003-e29f-412f-a2e6-7b5c87c0e001";
 
         let bluetoothDevice;
         let timeCharacteristic;
@@ -45,7 +53,14 @@
 
                 const server = await bluetoothDevice.gatt.connect();
                 const service = await server.getPrimaryService(SERVICE_UUID);
+                
+                // ดึง Characteristic สำหรับเขียนเวลา
                 timeCharacteristic = await service.getCharacteristic(TIME_SYNC_CHAR_UUID);
+                
+                // ดึง Characteristic สำหรับฟังข้อมูล (Notify)
+                const dataCharacteristic = await service.getCharacteristic(DATA_NOTIFY_CHAR_UUID);
+                await dataCharacteristic.startNotifications();
+                dataCharacteristic.addEventListener('characteristicvaluechanged', handleDataChanged);
 
                 document.getElementById('status').innerText = "เชื่อมต่อสำเร็จ!";
                 document.getElementById('status').style.color = "green";
@@ -61,22 +76,36 @@
             }
         });
 
+        // ฟังก์ชันรับข้อมูลที่ ESP32 ส่ง Notify กลับมา
+        function handleDataChanged(event) {
+            const value = event.target.value;
+            const waterPct = value.getUint8(0);
+            const slotCode = value.getUint8(1); // 0=ปกติ/ไม่มีเตือน, 1=เช้า, 2=กลางวัน, 3=เย็น
+
+            // แสดงผลระดับน้ำ
+            document.getElementById('waterLevel').innerText = waterPct;
+
+            // แปลงรหัสช่องยาเป็นข้อความภาษาไทย
+            let slotText = "ปกติ (ยังไม่ถึงเวลาเตือน)";
+            if (slotCode === 1) slotText = "⏰ กำลังเตือนมื้อเช้า";
+            else if (slotCode === 2) slotText = "⏰ กำลังเตือนมื้อกลางวัน";
+            else if (slotCode === 3) slotText = "⏰ กำลังเตือนมื้อเย็น";
+
+            document.getElementById('pillStatus').innerText = slotText;
+        }
+
         async function syncCurrentTime() {
             if (!timeCharacteristic) return;
             try {
-                // ดึง Unix Timestamp ปัจจุบัน (หน่วยวินาที)
                 const unixTime = Math.floor(Date.now() / 1000);
-                
-                // แปลงเป็น Uint32Array (4 bytes) ตามที่โค้ด ESP32 คาดหวัง
                 const buffer = new ArrayBuffer(4);
                 const view = new DataView(buffer);
-                view.setUint32(0, unixTime, true); // true = Little Endian
+                view.setUint32(0, unixTime, true);
 
                 await timeCharacteristic.writeValue(buffer);
-                alert("ซิงค์เวลาเรียบร้อยแล้ว!");
+                console.log("ซิงค์เวลาเรียบร้อยแล้ว");
             } catch (error) {
                 console.error(error);
-                alert("ซิงค์เวลาไม่สำเร็จ: " + error);
             }
         }
 
